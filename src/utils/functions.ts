@@ -28,3 +28,12 @@ export function formatterShortDate(date: Date) {
 }
 // Example of use: formatterShortDate(new Date());
 // Result: "6/9/2021"
+
+export function formatNumber(value: number) {
+    return new Intl.NumberFormat("es-CO", {
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0,
+    })?.format(value);
+}
+// Example of use: formatNumber(1000);
+// Result: "1,000"

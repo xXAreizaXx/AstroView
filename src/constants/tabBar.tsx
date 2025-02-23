@@ -21,6 +21,12 @@ export const TabBarList: TTabBarList[] = [
         title: "Planetas"
     },
     {
+        display: false,
+        name: "details",
+        path: "details",
+        title: "Detalles"
+    },
+    {
         display: true,
         name: "favorites",
         path: "favorites",
