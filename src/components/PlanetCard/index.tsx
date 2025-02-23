@@ -2,7 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 
 // React & React Native
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 // Components
 import Typography from "@components/Typography";
@@ -11,11 +11,18 @@ import Typography from "@components/Typography";
 import COLORS from "@constants/colors";
 
 // Styles
+import { useRouter } from "expo-router";
 import { styles } from "./styled";
 
 export default function PlanetCard({ planet }: { planet: TPlanet }) {
+    const router = useRouter();
+
+    const handlePress = () => {
+        router.push(`/(tabs)/details?id=${planet.id}`);
+    };
+    
     return (
-        <View style={styles.card}>
+        <Pressable onPress={handlePress} style={styles.card}>
             <Typography variant="title" fontWeight="900">
                 {planet.englishName}
             </Typography>
@@ -68,7 +75,7 @@ export default function PlanetCard({ planet }: { planet: TPlanet }) {
                     </Typography>
                 </View>
             )}
-        </View>
+        </Pressable>
     );
 }
 
