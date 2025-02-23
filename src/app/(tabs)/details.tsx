@@ -1,11 +1,13 @@
 // Expo
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { useLocalSearchParams } from "expo-router";
 
 // React & React Native
-import { useQuery } from "@tanstack/react-query";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 // Components
 import Header from "@components/Header";
@@ -22,13 +24,62 @@ import COLORS from "@constants/colors";
 import { formatNumber } from "@utils/functions";
 
 export default function PlanetDetailScreen() {
+    // Router
     const { id } = useLocalSearchParams<{ id: string }>();
+    const queryClient = useQueryClient();
+
+    // States
+    const [isFavorite, setIsFavorite] = useState(false);
     
+    // Query
     const { data: planet, isLoading } = useQuery({
         queryKey: ["planet", id],
         queryFn: () => getPlanet(id),
         enabled: !!id,
     });
+
+    // Functions
+    const checkIfFavorite = async () => {
+        try {
+            const favorites = await AsyncStorage.getItem("favorites");
+            if (favorites) {
+                const parsedFavorites = JSON.parse(favorites);
+                setIsFavorite(parsedFavorites.includes(id));
+            }
+        } catch (error) {
+            console.error("Error checking favorites:", error);
+        }
+    };
+
+    const toggleFavorite = async () => {
+        try {
+            const favorites = await AsyncStorage.getItem("favorites");
+            let newFavorites = [];
+            
+            if (favorites) {
+                newFavorites = JSON.parse(favorites);
+            }
+
+            if (isFavorite) {
+                newFavorites = newFavorites.filter((favId: string) => favId !== id);
+            } else {
+                newFavorites.push(id);
+            }
+
+            await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
+            setIsFavorite(!isFavorite);
+            
+            // Invalidar la query de favoritos para forzar una actualización
+            queryClient.invalidateQueries({ queryKey: ["favorites"] });
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+        }
+    };
+
+    // Effects
+    useEffect(() => {
+        checkIfFavorite();
+    }, [id]);
 
     if (isLoading) return <Loader />;
 
@@ -48,9 +99,18 @@ export default function PlanetDetailScreen() {
         <View style={styles.container}>
             <Header />
             <ScrollView style={styles.content}>
-                <Typography variant="title" fontWeight="900" className={styles.name}>
-                    {planet.englishName}
-                </Typography>
+                <View style={styles.titleContainer}>
+                    <Typography variant="title" fontWeight="900" className={styles.name}>
+                        {planet.englishName}
+                    </Typography>
+                    <TouchableOpacity onPress={toggleFavorite} style={styles.favoriteButton}>
+                        <Ionicons 
+                            name={isFavorite ? "heart" : "heart-outline"} 
+                            size={28} 
+                            color={isFavorite ? COLORS?.state?.error : COLORS.text.primary} 
+                        />
+                    </TouchableOpacity>
+                </View>
                 {planet.alternativeName && (
                     <Typography variant="body" color={COLORS.text.secondary} className={styles.alternativeName}>
                         También conocido como: {planet.alternativeName}
@@ -142,5 +202,14 @@ const styles = StyleSheet.create({
     },
     infoTextContainer: {
         flex: 1,
+    },
+    titleContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8,
+    },
+    favoriteButton: {
+        padding: 8,
     },
 });
